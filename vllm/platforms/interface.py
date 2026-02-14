@@ -133,6 +133,7 @@ class Platform:
     supported_quantization: list[str] = []
 
     additional_env_vars: list[str] = []
+    _warned_missing_attrs: set[str] = set()
 
     _global_graph_pool: Optional[Any] = None
 
@@ -502,12 +503,20 @@ class Platform:
         """Raises if this request is unsupported on this platform"""
 
     def __getattr__(self, key: str):
+        # Debuggers and Python internals may repeatedly probe dunder attrs
+        # (for example, __iter__). Treat them as normal missing attrs without
+        # logging to avoid warning spam while stepping.
+        if key.startswith("__") and key.endswith("__"):
+            raise AttributeError(key)
+
         device = getattr(torch, self.device_type, None)
         if device is not None and hasattr(device, key):
             return getattr(device, key)
         else:
-            logger.warning("Current platform %s does not have '%s'" \
-            " attribute.", self.device_type, key)
+            if key not in self._warned_missing_attrs:
+                self._warned_missing_attrs.add(key)
+                logger.warning("Current platform %s does not have '%s'" \
+                " attribute.", self.device_type, key)
             return None
 
     def get_global_graph_pool(self) -> Any:
