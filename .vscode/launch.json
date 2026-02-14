@@ -1,0 +1,41 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "vLLM OpenAI API Server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "vllm.entrypoints.openai.api_server",
+            "args": [
+                "--model", "/data/ysh/models/Llama-3.1-8B-Instruct/",
+                "--served-model-name", "meta-llama/Llama-3.1-8B-Instruct",
+                "--host", "0.0.0.0",
+                "--port", "6578",
+                "--gpu-memory-utilization", "0.90",
+                "--max-model-len", "10000"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "VLLM_CONFIGURE_LOGGING": "1"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "transformers attention kernel",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/tiny_test/test_forward_variable_dataset.py",
+            "args": [
+                "--backend", "transformers",
+                "--gpu", "0"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "VLLM_CONFIGURE_LOGGING": "1"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
+    ]
+}
