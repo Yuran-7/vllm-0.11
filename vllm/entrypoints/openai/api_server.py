@@ -607,7 +607,7 @@ async def create_chat_completion(request: ChatCompletionRequest,
         return base(raw_request).create_error_response(
             message="The model does not support Chat Completions API")
     try:
-        generator = await handler.create_chat_completion(request, raw_request)
+        generator = await handler.create_chat_completion(request, raw_request)  # serving_chat.py
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
                             detail=str(e)) from e
