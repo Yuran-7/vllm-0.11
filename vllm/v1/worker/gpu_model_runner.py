@@ -2630,8 +2630,13 @@ class GPUModelRunner(LoRAModelRunnerMixin, KVConnectorModelRunnerMixin):
 
         with DeviceMemoryProfiler() as m:
             time_before_load = time.perf_counter()
+            # 1. 获取模型加载器
+            # 返回的类型是 BaseModelLoader，vllm/model_executor/model_loader/base_loader.py
+            # BaseModelLoader 是抽象类，子类是DefaultModelLoader
             model_loader = get_model_loader(self.load_config)
             logger.info("Loading model from scratch...")
+            # 2. 加载模型（例如 LLaMA）
+            # 先初始化模型结构（例如 LlamaForCausalLM），再加载权重
             self.model = model_loader.load_model(
                 vllm_config=self.vllm_config, model_config=self.model_config)
             if self.lora_config:

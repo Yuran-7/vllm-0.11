@@ -21,7 +21,7 @@ from vllm.v1.outputs import DraftTokenIds, ModelRunnerOutput
 FailureCallback = Callable[[], None]
 
 
-class Executor(ExecutorBase):
+class Executor(ExecutorBase): # vllm/executor/executor_base.py
     """
     Abstract class for v1 executors, mainly define some methods for v1.
     For methods shared by v0 and v1, define them in ExecutorBase"""

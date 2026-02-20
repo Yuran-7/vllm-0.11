@@ -30,7 +30,7 @@ class Request:
         request_id: str,
         prompt_token_ids: Optional[list[int]],
         sampling_params: Optional[SamplingParams],
-        pooling_params: Optional[PoolingParams],
+        pooling_params: Optional[PoolingParams],  # Pooling models（池化模型） 指的是那些不以生成文字为目的，而是将输入的一串 Token（词元）压缩、转换成固定长度向量或单一得分的模型
         eos_token_id: Optional[int],
         client_index: int = 0,
         arrival_time: Optional[float] = None,
@@ -62,6 +62,7 @@ class Request:
         self.stop_reason: Union[int, str, None] = None
 
         # P/D: Connector-specific KV transfer parameters.
+        # P/D 通常指的是 Prefill（预填充） 和 Decoding（解码） 的分离架构
         self.kv_transfer_params: Optional[dict[str, Any]] = None
 
         if pooling_params is not None:
@@ -204,17 +205,18 @@ class Request:
 
 class RequestStatus(enum.IntEnum):
     """Status of a request."""
-    WAITING = enum.auto()
+    WAITING = enum.auto() # Python 会自动为它们分配连续的整数（通常从 1 开始）
     WAITING_FOR_FSM = enum.auto()
     WAITING_FOR_REMOTE_KVS = enum.auto()
     RUNNING = enum.auto()
     PREEMPTED = enum.auto()
     # Note: anything after PREEMPTED will be considered
     # as a finished status.
-    FINISHED_STOPPED = enum.auto()
-    FINISHED_LENGTH_CAPPED = enum.auto()
-    FINISHED_ABORTED = enum.auto()
-    FINISHED_IGNORED = enum.auto()
+    # PREEMPTED 之后的所有状态都视为已结束
+    FINISHED_STOPPED = enum.auto()  # 正常生成结束（遇到了 EOS 停止符）
+    FINISHED_LENGTH_CAPPED = enum.auto()  # 达到了你设定的 max_tokens 上限被迫停止
+    FINISHED_ABORTED = enum.auto()  # 客户端主动取消了请求
+    FINISHED_IGNORED = enum.auto()  # 由于某些错误（如 Prompt 太长超过模型窗口）被忽略
 
     def __str__(self):
         return self.name

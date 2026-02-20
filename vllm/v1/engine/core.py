@@ -61,7 +61,9 @@ _R = TypeVar('_R')  # Return type for collective_rpc
 
 
 class EngineCore:
-    """Inner loop of vLLM's Engine."""
+    """Inner loop of vLLM's Engine.
+      "Inner Loop"（内层循环） 是一个非常关键的概念，它指代程序中执行频率最高、逻辑最核心、对性能影响最大的那部分代码块
+    """
 
     def __init__(self,
                  vllm_config: VllmConfig,
