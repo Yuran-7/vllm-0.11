@@ -22,7 +22,7 @@
             "justMyCode": false
         },
         {
-            "name": "transformers attention kernel",
+            "name": "test_prefill_variable_dataset.py",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/tests/tiny_test/test_prefill_variable_dataset.py",

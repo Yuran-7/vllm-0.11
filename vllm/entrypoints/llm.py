@@ -293,24 +293,24 @@ class LLM:
 
         log_non_default_args(engine_args)
 
-        # Create the Engine (autoselects V0 vs V1)
+        # 初始化LLMEngine这个类，它会加载模型和tokenizer，并且会根据传入的参数进行配置
         self.llm_engine = LLMEngine.from_engine_args(
             engine_args=engine_args, usage_context=UsageContext.LLM_CLASS)
-        self.engine_class = type(self.llm_engine)
+        self.engine_class = type(self.llm_engine) # <class 'vllm.v1.engine.llm_engine.LLMEngine'>
 
         self.request_counter = Counter()
         self.default_sampling_params: Union[dict[str, Any], None] = None
 
         supported_tasks = self.llm_engine.get_supported_tasks()  # type: ignore
 
-        logger.info("Supported_tasks: %s", supported_tasks)
+        logger.info("Supported_tasks: %s", supported_tasks) # Supported_tasks: ['generate']
 
         self.supported_tasks = supported_tasks
 
         # Load the Input/Output processor plugin if any
-        io_processor_plugin = self.llm_engine.model_config.io_processor_plugin
+        io_processor_plugin = self.llm_engine.model_config.io_processor_plugin  # None
         self.io_processor = get_io_processor(self.llm_engine.vllm_config,
-                                             io_processor_plugin)
+                                             io_processor_plugin) # None
 
     def get_tokenizer(self) -> AnyTokenizer:
         return self.llm_engine.get_tokenizer()

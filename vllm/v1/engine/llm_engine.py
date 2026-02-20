@@ -111,7 +111,7 @@ class LLMEngine:
             self.output_processor.tracer = tracer
 
         # EngineCore (gets EngineCoreRequests and gives EngineCoreOutputs)
-        # 默认创建SyncMPClient
+        # 默认创建SyncMPClient，为离线的LLM服务的
         self.engine_core = EngineCoreClient.make_client(
             multiprocess_mode=multiprocess_mode,
             asyncio_mode=False,

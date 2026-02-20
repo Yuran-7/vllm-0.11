@@ -395,7 +395,8 @@ class BackgroundResources:
             self.engine_dead = True
             raise EngineDeadError()
 
-
+# MP的意思是Multi-Processing（多进程）
+# 创建新的子进程来启动EngineCore，并通过ZMQ进行通信的客户端实现
 class MPClient(EngineCoreClient):
     """
     MPClient: base client for multi-proc EngineCore.
@@ -445,6 +446,7 @@ class MPClient(EngineCoreClient):
                     "stats_update_address")
             else:
                 # Engines are managed by this client.
+                # 创建新的子进程，启动EngineCore
                 with launch_core_engines(vllm_config, executor_class,
                                          log_stats) as (engine_manager,
                                                         coordinator,
@@ -569,6 +571,7 @@ class MPClient(EngineCoreClient):
             # like MultiprocExecutor, but we set engine_dead flag which will
             # cause subsequent operations to raise EngineDeadError
 
+        # 在主进程中创建线程，名称为"MPClientEngineMonitor"，线程函数为monitor_engine_cores，守护线程
         Thread(target=monitor_engine_cores,
                daemon=True,
                name="MPClientEngineMonitor").start()
@@ -653,6 +656,7 @@ class SyncMPClient(MPClient):
                 out_socket.close(linger=0)
 
         # Process outputs from engine in separate thread.
+        # 在主进程中创建线程，名称为"EngineCoreOutputQueueThread"，线程函数为process_outputs_socket，守护线程
         self.output_queue_thread = Thread(target=process_outputs_socket,
                                           name="EngineCoreOutputQueueThread",
                                           daemon=True)
@@ -684,6 +688,7 @@ class SyncMPClient(MPClient):
             self.input_socket.send_multipart(msg, copy=False)
             return
 
+        # 发送到子进程
         tracker = self.input_socket.send_multipart(msg, copy=False, track=True)
         self.add_pending_message(tracker, request)
 
