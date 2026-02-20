@@ -7,8 +7,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from vllm import LLM, SamplingParams
 
 # 配置
-DATA_FILE = "/home/ysh/datasets/LongBench/data/hotpotqa_e_variable_length.jsonl"
-MODEL_PATH = "/data/ysh/models/Llama-3.1-8B-Instruct/"
+DATA_FILE = "/NV1/ysh/GraphRAG/datasets/LongBench/data/hotpotqa_e_variable_length.jsonl"
+MODEL_PATH = "/NV1/ykw/models/Meta-Llama-3.1-8B-Instruct/"
 MAX_NEW_TOKENS = 1
 
 

@@ -25,9 +25,9 @@
             "name": "transformers attention kernel",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/tests/tiny_test/test_forward_variable_dataset.py",
+            "program": "${workspaceFolder}/tests/tiny_test/test_prefill_variable_dataset.py",
             "args": [
-                "--backend", "transformers",
+                "--backend", "vllm",
                 "--gpu", "0"
             ],
             "env": {

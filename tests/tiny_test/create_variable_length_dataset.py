@@ -3,9 +3,9 @@ import os
 from transformers import AutoTokenizer
 
 # 配置
-DATA_FILE = "/home/ysh/datasets/LongBench/data/hotpotqa_e.jsonl"
-OUTPUT_FILE = "/home/ysh/datasets/LongBench/data/hotpotqa_e_variable_length.jsonl"
-MODEL_PATH = "/data/ysh/models/Llama-3.1-8B-Instruct/"
+DATA_FILE = "/NV1/ysh/GraphRAG/datasets/LongBench/data/hotpotqa_e.jsonl"
+OUTPUT_FILE = "/NV1/ysh/GraphRAG/datasets/LongBench/data/hotpotqa_e_variable_length.jsonl"
+MODEL_PATH = "/NV1/ykw/models/Meta-Llama-3.1-8B-Instruct/"
 
 # 目标 token 长度列表
 TARGET_TOKEN_LENGTHS = [2000, 4000, 6000, 8000, 10000, 15000, 20000, 25000, 28000, 30000, 35000, 40000]
