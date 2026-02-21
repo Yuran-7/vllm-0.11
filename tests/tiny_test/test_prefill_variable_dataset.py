@@ -28,6 +28,12 @@ def parse_args():
         default=0,
         help="GPU index to use (0 or 1)",
     )
+    parser.add_argument(
+        "--max_num_batched_tokens",
+        type=int,
+        default=None,
+        help="Maximum number of batched tokens. If not set, uses vLLM default.",
+    )
     return parser.parse_args()
 
 
@@ -115,12 +121,6 @@ def main():
 
     print(f"\n[Step 1] Reading dataset from: {DATA_FILE}")
     entries = read_variable_length_dataset(DATA_FILE)
-    if entries is None:
-        print("Failed to read dataset. Exiting.")
-        return
-    if not entries:
-        print("Dataset is empty. Exiting.")
-        return
 
     print(f"Loaded {len(entries)} entries")
 
@@ -146,13 +146,14 @@ def main():
     print("\n[Step 3] Loading model once...")
     try:
         if args.backend == "vllm":
-            print(f"Using vLLM with max_model_len={max_model_len}")
+            print(f"Using vLLM with max_model_len={max_model_len}, max_num_batched_tokens={args.max_num_batched_tokens}")
             llm = LLM(
                 model=MODEL_PATH,
                 tensor_parallel_size=1,
                 gpu_memory_utilization=0.9,
                 max_model_len=max_model_len,
                 enforce_eager=True,
+                max_num_batched_tokens=args.max_num_batched_tokens,
             )
         else:
             print(f"Using transformers on cuda:{args.gpu}")
@@ -250,7 +251,8 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python tests/tiny_test/test_forward_variable_dataset.py --backend vllm --gpu 0
-# python tests/tiny_test/test_forward_variable_dataset.py --backend transformers --gpu 1
-# python tests/tiny_test/test_forward_variable_dataset.py --backend vllm --gpu 1
-# python tests/tiny_test/test_forward_variable_dataset.py --backend transformers --gpu 0
+# python tests/tiny_test/test_prefill_variable_dataset.py --backend vllm --gpu 0
+# python tests/tiny_test/test_prefill_variable_dataset.py --backend transformers --gpu 1
+# python tests/tiny_test/test_prefill_variable_dataset.py --backend vllm --gpu 1
+# python tests/tiny_test/test_prefill_variable_dataset.py --backend transformers --gpu 0
+# python tests/tiny_test/test_prefill_variable_dataset.py --backend vllm --gpu 0 --max_num_batched_tokens 4096

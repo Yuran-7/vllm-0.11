@@ -105,7 +105,7 @@ CUDA_VISIBLE_DEVICES=0 python -m vllm.entrypoints.openai.api_server \
 │                          │                                      │
 │                          ▼                                      │
 │     ┌─────────────────────────────────────────────────┐       │
-│     │ # 创建 V1 AsyncLLM 引擎                          │       │
+│     │ # 创建 V1 AsyncLLM 引擎，它和LLMEngine是平级关系  │       │
 │     │ async_llm = AsyncLLM.from_vllm_config(          │       │
 │     │     vllm_config=vllm_config,                    │       │
 │     │     usage_context=...,                          │       │

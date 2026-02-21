@@ -2642,10 +2642,10 @@ class GPUModelRunner(LoRAModelRunnerMixin, KVConnectorModelRunnerMixin):
             if self.lora_config:
                 self.model = self.load_lora_model(self.model, self.vllm_config,
                                                   self.device)
-            if hasattr(self, "drafter"):
+            if hasattr(self, "drafter"):  # 不进入
                 logger.info("Loading drafter model...")
                 self.drafter.load_model(self.model)
-            if self.use_aux_hidden_state_outputs:
+            if self.use_aux_hidden_state_outputs: # 不进入
                 if supports_eagle3(self.model):
                     self.model.set_aux_hidden_state_layers(
                         self.model.get_eagle3_aux_hidden_state_layers())
@@ -3393,12 +3393,15 @@ class GPUModelRunner(LoRAModelRunnerMixin, KVConnectorModelRunnerMixin):
                         enumerate(dummy_encoder_outputs))
 
         # Add `is_profile` here to pre-allocate communication buffers
+        # self.max_num_tokens = scheduler_config.max_num_batched_tokens = 2028 或者 8192
+        # last_hidden_states是我们需要的，它的形状为[num_reqs, hidden_size]，其中num_reqs为max_num_seqs=256，相关代码在vllm/engine/arg_utils.py
         hidden_states, last_hidden_states \
             = self._dummy_run(self.max_num_tokens, is_profile=True)
         if get_pp_group().is_last_rank:
             if self.is_pooling_model:
                 output = self._dummy_pooler_run(hidden_states)
             else:
+                # 输出的 last_hidden_states 还要经过 LM Head（语言模型头）和采样器，这些也会消耗显存
                 output = self._dummy_sampler_run(last_hidden_states)
         else:
             output = None

@@ -82,6 +82,7 @@ class EngineCore:
         self.log_stats = log_stats
 
         # Setup Model.
+        # 会加载模型
         self.model_executor = executor_class(vllm_config)
         if executor_fail_callback is not None:
             self.model_executor.register_failure_callback(
@@ -167,14 +168,16 @@ class EngineCore:
 
         self.step_fn = (self.step if self.batch_queue is None else
                         self.step_with_batch_queue)
-
+    # 在构造函数中调用
     def _initialize_kv_caches(
             self, vllm_config: VllmConfig) -> tuple[int, int, KVCacheConfig]:
         start = time.time()
 
         # Get all kv cache needed by the model
+        # 1. 查询模型每层的 KV Cache 规格（num_kv_heads、head_size、dtype 等）
         kv_cache_specs = self.model_executor.get_kv_cache_specs()
 
+        # 如果列表里至少有一个元素为“真”（非空、非 None、非 False），则返回 True
         has_kv_cache = any(kv_cache_spec for kv_cache_spec in kv_cache_specs)
         if has_kv_cache:
             if os.environ.get("VLLM_ELASTIC_EP_SCALE_UP_LAUNCH") == "1":
@@ -188,6 +191,7 @@ class EngineCore:
             else:
                 # Profiles the peak memory usage of the model to determine how
                 # much memory can be allocated for kv cache.
+                # 2. 通过 profile run 测量可用内存（核心步骤）
                 available_gpu_memory = (
                     self.model_executor.determine_available_memory())
                 self.available_gpu_memory_for_kv_cache = \

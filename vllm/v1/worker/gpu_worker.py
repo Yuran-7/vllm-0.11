@@ -261,6 +261,7 @@ class Worker(WorkerBase):
                 self.init_snapshot,
                 weights_memory=int(self.model_runner.model_memory_usage),
         ) as profile_result:
+            # 核心函数
             self.model_runner.profile_run()
 
         self.non_torch_memory = profile_result.non_torch_increase
