@@ -198,6 +198,7 @@ class Worker(WorkerBase):
                 f"Not support device type: {self.device_config.device}")
 
         # Construct the model runner
+        # UniProcExecutor和WorkerProc初始化worker后，会跟一个self.worker.init_device()
         self.model_runner: GPUModelRunner = GPUModelRunner(
             self.vllm_config, self.device)
 

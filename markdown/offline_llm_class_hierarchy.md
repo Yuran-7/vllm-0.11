@@ -32,10 +32,9 @@
         └── MultiprocExecutor    ← TP>1 默认（为每个 GPU 各启动一个 WorkerProc 子进程）
 
 Worker 层（两种路径都经过 WorkerWrapperBase）
-├── [TP=1]  UniProcExecutor ──直接持有──► WorkerWrapperBase    (vllm/worker/worker_base.py)
-└── [TP>1]  WorkerProc（子进程）──内部持有──► WorkerWrapperBase (vllm/worker/worker_base.py)
-                                                └── Worker     (vllm/v1/worker/gpu_worker.py)
-                                                      └── GPUModelRunner (vllm/v1/worker/gpu_model_runner.py)
+├── [TP=1]  UniProcExecutor.driver_worker ──► WorkerWrapperBase    (vllm/worker/worker_base.py)
+└── [TP>1]  WorkerProc.worker ──────────────► WorkerWrapperBase    (vllm/worker/worker_base.py)
+└── WorkerWrapperBase → Worker (vllm/v1/worker/gpu_worker.py) → GPUModelRunner (vllm/v1/worker/gpu_model_runner.py)
 ```
 
 ---
@@ -171,8 +170,8 @@ Worker 层（两种路径都经过 WorkerWrapperBase）
 - **文件**：`vllm/v1/executor/abstract.py`
 - **继承**：`UniProcExecutor(UniProcExecutorV0, Executor)`
 - **职责**：TP=1 时的轻量执行器，**不启动任何 WorkerProc 子进程**：
-  - 直接在当前进程（EngineCoreProc）内实例化 `WorkerWrapperBase`，持有一个 `Worker`
-  - `collective_rpc()` 直接调用 `worker_wrapper.execute_method()` 而非跨进程通信
+  - UniProcExecutorV0的`_init_executor()` 中：`self.driver_worker = WorkerWrapperBase(...)` — 以 `driver_worker` 属性持有
+  - `collective_rpc()` 直接调用 `run_method(self.driver_worker, method, ...)` 而非跨进程通信
   - 节省子进程创建开销，适合单 GPU 场景
 - **与 `MultiprocExecutor` 的核心区别**：无共享内存 `MessageQueue`，无 `WorkerMonitor` 线程，无跨进程 IPC
 
@@ -181,7 +180,7 @@ Worker 层（两种路径都经过 WorkerWrapperBase）
 ### 11. `WorkerProc`
 - **文件**：`vllm/v1/executor/multiproc_executor.py`
 - **职责**：在独立子进程中运行的 Worker 包装器（每个 GPU 对应一个）：
-  - 通过 `WorkerWrapperBase` 实例化并持有 `Worker` 对象
+  - `__init__()` 中：`wrapper = WorkerWrapperBase(...); self.worker = wrapper` — 以 `worker` 属性持有
   - 从共享内存 `MessageQueue` 接收 `SchedulerOutput`
   - 调用 `worker.execute_model(scheduler_output)` 触发 GPU 推理
   - 将 `ModelRunnerOutput` 写入另一个 `MessageQueue` 返回给 `MultiprocExecutor`
