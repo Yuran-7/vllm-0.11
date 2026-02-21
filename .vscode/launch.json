@@ -28,8 +28,8 @@
             "program": "${workspaceFolder}/tests/tiny_test/test_prefill_variable_dataset.py",
             "args": [
                 "--backend", "vllm",
-                "--gpu", "0",
-                "--max_num_batched_tokens", "2048"
+                "--gpu", "0"
+                //,"--max_num_batched_tokens", "2048"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0",

@@ -2830,7 +2830,7 @@ def memory_profiling(
     The increase of `non_torch_memory` from creating the current vLLM instance until after profiling to get (c.).
     """  # noqa
     gc.collect()
-    torch.cuda.empty_cache()
+    torch.cuda.empty_cache()  # 当前缓存池里“未被任何 tensor 占用”的那部分块 释放回 CUDA drive
     torch.cuda.reset_peak_memory_stats()
 
     result = MemoryProfilingResult()
@@ -2839,14 +2839,14 @@ def memory_profiling(
     # the part of memory used for holding the model weights
     result.weights_memory = weights_memory
 
-    result.before_profile.measure()
+    result.before_profile.measure() # 创建一个新的 snapshot 来记录当前的内存使用情况
 
     yield result
 
     gc.collect()
     torch.cuda.empty_cache()
 
-    result.after_profile.measure()
+    result.after_profile.measure()  # 再创建一个新的 snapshot 来记录在 profiling 结束后的内存使用情况
 
     diff_profile = result.after_profile - result.before_profile
     diff_from_create = result.after_profile - result.before_create

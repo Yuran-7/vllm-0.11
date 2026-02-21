@@ -13,13 +13,14 @@
 - [第四步：GPUWorker.determine_available_memory()——核心计算](#第四步gpuworkerdetermine_available_memory核心计算)
 - [第五步：memory_profiling()——Profile 运行测峰值](#第五步memory_profiling----profile-运行测峰值)
 - [第六步：get_kv_cache_configs()——换算成 Block 数量](#第六步get_kv_cache_configs换算成-block-数量)
-- [完整数值算例（基于日志）](#完整数值算例基于日志)
-- [关键公式汇总](#关键公式汇总)
-- [各文件职责速查](#各文件职责速查)
 
 ---
 
 ## 完整调用链总览
+
+(EngineCore_DP0 pid=2031378) INFO 02-21 23:15:07 [gpu_worker.py:302] Available KV cache memory: 4.93 GiB
+
+(EngineCore_DP0 pid=2031378) INFO 02-21 23:15:07 [kv_cache_utils.py:1087] GPU KV cache size: 40,416 tokens
 
 ```
 EngineCore.__init__()                           [v1/engine/core.py]
@@ -176,8 +177,8 @@ result.non_kv_cache_memory = (a) + (b) + (c)
 | 分项 | 如何测量 | 典型值（Llama 3.1-8B, BF16） |
 |------|---------|---------------------------|
 | **(a) 模型权重** | `model_memory_usage`（加载时记录） | 14.99 GiB |
-| **(b) 峰值 activation** | `torch.cuda.memory_stats()["allocated_bytes.all.peak"]` 的增量 | 约 0.1～0.5 GiB |
-| **(c) 非 Torch 内存增量** | `(cuda_memory - torch.cuda.memory_reserved())` 的增量（B0→A） | NCCL 等 |
+| **(b) 峰值 activation** | `torch.cuda.memory_stats()["allocated_bytes.all.peak"]` 的增量 | 1.191GiB |
+| **(c) 非 Torch 内存增量** | `(cuda_memory - torch.cuda.memory_reserved())` 的增量（B0→A） | 36MB |
 
 ---
 
@@ -212,95 +213,3 @@ logger.info("Maximum concurrency for %s tokens per request: %.2fx",
             max_model_len, total_tokens / max_model_len)
 ```
 
----
-
-## 完整数值算例（基于日志）
-
-```
-GPU: RTX 3090 (24 GiB)
-模型: Meta-Llama-3.1-8B-Instruct (BF16)
-gpu_memory_utilization: 0.9
-max_model_len: 40096
-block_size: 16
-```
-
-**Llama 3.1-8B 配置**：
-- `num_layers` = 32
-- `num_kv_heads` = 8
-- `head_size` = 128
-- `dtype` = BF16（2 bytes）
-
-**Step-by-step 计算**：
-
-| 步骤 | 计算 | 结果 |
-|------|------|------|
-| ① GPU 总显存 | — | 24.00 GiB |
-| ② requested_memory | 24 × 0.9 | **21.60 GiB** |
-| ③ 模型权重 (a) | 日志记录 | 14.99 GiB |
-| ④ 峰值 activation (b) | profile run 测量 | ~0.5 GiB（估计） |
-| ⑤ 非 torch 内存 (c) | NCCL 等 | ~0.2 GiB（估计） |
-| ⑥ non_kv_cache = (a)+(b)+(c) | 14.99+0.5+0.2 | **~15.69 GiB** |
-| ⑦ **available_kv_cache** | 21.60 − 15.69 | **≈ 4.90 GiB** ✅ |
-
-```
-→ INFO: Available KV cache memory: 4.90 GiB     ← 与日志完全吻合
-```
-
-**Block 数量计算**：
-
-$$
-\text{page\_size\_per\_layer} = 2 \times 16 \times 8 \times 128 \times 2 = 65{,}536 \text{ bytes} = 64 \text{ KiB}
-$$
-
-$$
-\text{num\_blocks} = \lfloor 4.90 \text{ GiB} \div 64\text{ KiB} \div 32 \rfloor = \lfloor 5{,}259{,}763{,}814 \div 65{,}536 \div 32 \rfloor \approx 2{,}510 \text{ blocks}
-$$
-
-$$
-\text{total\_tokens} = 2{,}510 \times 16 = 40{,}160 \text{ tokens}
-$$
-
-```
-→ INFO: GPU KV cache size: 40,160 tokens          ← 与日志完全吻合
-→ INFO: Maximum concurrency for 40,096 tokens per request: 1.00x
-```
-
----
-
-## 关键公式汇总
-
-```
-requested_memory   = GPU_total × gpu_memory_utilization
-
-non_kv_cache       = weights_memory
-                   + peak_activation_increase   (profile run 测峰值)
-                   + non_torch_increase          (NCCL等非PyTorch内存)
-
-available_kv_cache = requested_memory - non_kv_cache
-
-page_size_per_layer = 2 × block_size × num_kv_heads × head_size × dtype_bytes
-
-num_blocks          = available_kv_cache // page_size_per_layer // num_layers
-
-total_kv_tokens     = num_blocks × block_size
-```
-
----
-
-## 各文件职责速查
-
-| 文件 | 关键函数/类 | 职责 |
-|------|------------|------|
-| `vllm/v1/engine/core.py` | `EngineCore._initialize_kv_caches()` | 编排整个 KV cache 初始化流程 |
-| `vllm/v1/executor/abstract.py` | `Executor.determine_available_memory()` | 通过 RPC 分发到 Worker |
-| `vllm/v1/worker/gpu_worker.py` | `GPUWorker.init_device()` | 拍基准内存快照，计算 requested_memory |
-| `vllm/v1/worker/gpu_worker.py` | `GPUWorker.determine_available_memory()` | **核心**：profile run + 计算 available\_kv\_cache |
-| `vllm/utils/__init__.py` | `memory_profiling()` / `MemorySnapshot` | 精确测量各类内存分项 |
-| `vllm/v1/core/kv_cache_utils.py` | `get_num_blocks()` / `get_kv_cache_configs()` | 按 page_size 换算 block 数，打印 token 数 |
-| `vllm/v1/kv_cache_interface.py` | `FullAttentionSpec.page_size_bytes` | 计算每层每 block 字节数 |
-
----
-
-**文档版本**: v1.0
-**更新日期**: 2026 年 2 月 21 日
-**适用 vLLM 版本**: 0.11.x (V1 引擎)

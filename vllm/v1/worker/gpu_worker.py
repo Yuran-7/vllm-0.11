@@ -179,7 +179,9 @@ class Worker(WorkerBase):
             torch.cuda.empty_cache()
 
             # take current memory snapshot
+            # 在加载模型前记录一个快照
             self.init_snapshot = MemorySnapshot()
+            # 计算requested_memory
             self.requested_memory = (self.init_snapshot.total_memory *
                                      self.cache_config.gpu_memory_utilization)
             if self.init_snapshot.free_memory < self.requested_memory:
