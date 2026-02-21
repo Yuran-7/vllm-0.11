@@ -9,7 +9,7 @@ import torch.distributed as dist
 
 from vllm.config import VllmConfig
 from vllm.executor.executor_base import ExecutorBase
-from vllm.executor.uniproc_executor import (  # noqa
+from vllm.executor.uniproc_executor import (  # noqa，不进行质量检查
     ExecutorWithExternalLauncher as ExecutorWithExternalLauncherV0)
 from vllm.executor.uniproc_executor import (  # noqa
     UniProcExecutor as UniProcExecutorV0)

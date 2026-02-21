@@ -385,21 +385,6 @@ def step(self):
     return processed.request_outputs
 ```
 
----
-
-## 🔍 关键代码位置
-
-| 组件 | 文件路径 | 关键类/函数 |
-|------|---------|-----------|
-| 环境变量配置 | [vllm/envs.py](vllm/envs.py#L117) | `VLLM_ENABLE_V1_MULTIPROCESSING` |
-| 客户端工厂 | [vllm/v1/engine/core_client.py](vllm/v1/engine/core_client.py#L62) | `EngineCoreClient.make_client()` |
-| LLMEngine | [vllm/v1/engine/llm_engine.py](vllm/v1/engine/llm_engine.py#L118) | `LLMEngine.__init__()` |
-| SyncMPClient | [vllm/v1/engine/core_client.py](vllm/v1/engine/core_client.py#L597) | `SyncMPClient` |
-| AsyncMPClient | [vllm/v1/engine/core_client.py](vllm/v1/engine/core_client.py#L748) | `AsyncMPClient` |
-| InprocClient | [vllm/v1/engine/core_client.py](vllm/v1/engine/core_client.py#L234) | `InprocClient` |
-| EngineCore | [vllm/v1/engine/core.py](vllm/v1/engine/core.py#L63) | `EngineCore` |
-| EngineCoreProc | [vllm/v1/engine/core.py](vllm/v1/engine/core.py#L453) | `EngineCoreProc` |
-| 进程启动 | [vllm/v1/engine/utils.py](vllm/v1/engine/utils.py#L596) | `launch_core_engines()` |
 
 ---
 
